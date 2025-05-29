@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 30-Day n8n Automation Curriculum</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!--
+        Curriculum Animation Plan:
+        1.  Structure: Single-page application.
+        2.  Content: Display the 30-day n8n curriculum from the provided Markdown.
+        3.  Layout:
+            - Main title.
+            - Weekly sections, each acting as an accordion.
+            - Clicking a week title expands/collapses its content.
+            - Each day within a week is a "card" showing details: Title, Objective, Concepts, Steps, Value.
+        4.  Animation:
+            - When a week is expanded, its day cards animate in (e.g., fade in + slight slide up).
+            - Smooth accordion transitions for week expansion/collapse.
+        5.  Styling: Tailwind CSS, "Energetic & Playful" color palette (#FF6B6B, #FFD166, #06D6A0, #118AB2, #073B4C), Material Design inspired cards.
+        6.  Technology: HTML, Tailwind CSS, Vanilla JavaScript.
+        7.  No SVG, No Mermaid JS. Unicode characters for icons if any.
+    -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F0F4F8; /* Light Grayish Blue */
+            color: #073B4C; /* Dark Blue text */
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #118AB2, #06D6A0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .week-header {
+            cursor: pointer;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .week-header:hover {
+            background-color: #E0F2FE; /* Light blue hover */
+        }
+        .week-header.active {
+             background-color: #B3E5FC; /* Slightly darker blue when active */
+        }
+        .arrow-icon {
+            transition: transform 0.3s ease;
+        }
+        .week-header.active .arrow-icon {
+            transform: rotate(90deg);
+        }
+        .day-cards-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .day-card {
+            background-color: white;
+            border-radius: 8px;
+            margin-top: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            border-left-width: 4px;
+        }
+        .day-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .day-card h4 { color: #118AB2; } /* Main blue for subheadings within cards */
+        .day-card strong { color: #073B4C; }
+
+        /* Color accents for weeks */
+        .week-1 .week-header { background-color: #FFEBEE; /* Light Red */ color: #C62828; }
+        .week-1 .week-header:hover { background-color: #FFCDD2; }
+        .week-1 .week-header.active { background-color: #EF9A9A; }
+        .week-1 .day-card { border-color: #FF6B6B; } /* Vibrant Red/Coral */
+
+        .week-2 .week-header { background-color: #FFF8E1; /* Light Yellow */ color: #FF8F00; }
+        .week-2 .week-header:hover { background-color: #FFECB3; }
+        .week-2 .week-header.active { background-color: #FFE082; }
+        .week-2 .day-card { border-color: #FFD166; } /* Bright Yellow */
+
+        .week-3 .week-header { background-color: #E0F2F1; /* Light Teal */ color: #00695C; }
+        .week-3 .week-header:hover { background-color: #B2DFDB; }
+        .week-3 .week-header.active { background-color: #80CBC4; }
+        .week-3 .day-card { border-color: #06D6A0; } /* Teal/Green */
+
+        .week-4 .week-header { background-color: #E3F2FD; /* Light Blue */ color: #0D47A1; }
+        .week-4 .week-header:hover { background-color: #BBDEFB; }
+        .week-4 .week-header.active { background-color: #90CAF9; }
+        .week-4 .day-card { border-color: #118AB2; } /* Strong Blue */
+        
+        .week-5 .week-header { background-color: #FBE9E7; /* Light Orange */ color: #D84315; }
+        .week-5 .week-header:hover { background-color: #FFCCBC; }
+        .week-5 .week-header.active { background-color: #FFAB91; }
+        .week-5 .day-card { border-color: #F78C6C; } /* Orange for Week 5 from previous example */
+
+        .day-card-content ol { list-style-type: decimal; padding-left: 1.5rem; }
+        .day-card-content ol li { margin-bottom: 0.25rem; }
+        .day-card-content code {
+            background-color: #E8E8E8;
+            padding: 0.1em 0.4em;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+        .day-card-content pre {
+            background-color: #2D3748; /* Tailwind gray-800 */
+            color: #F7FAFC; /* Tailwind gray-100 */
+            padding: 0.75rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.875em;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .day-card-content pre code {
+            background-color: transparent;
+            padding: 0;
+            font-size: 1em;
+        }
+        .tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; margin-top: 0.25rem; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="py-10 bg-white text-center shadow-md">
+        <div class="container mx-auto px-6">
+            <h1 class="text-4xl md:text-5xl font-black mb-3">
+                <span class="gradient-text">30-Day n8n Automation Curriculum</span> 🚀
+            </h1>
+            <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto">
+                An interactive guide to learning n8n, day by day. Click on a week to expand its lessons.
+            </p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 py-8">
+        <div id="curriculumContainer" class="space-y-6">
+            <div class="week-section week-1 bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="week-header">
+                    <h2 class="text-2xl font-bold">Week 1: Getting Started with n8n (Days 1-7)</h2>
+                    <span class="arrow-icon text-2xl font-bold transform transition-transform duration-300">➡️</span>
+                </div>
+                <div class="day-cards-container p-4 pt-0">
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 1: What is n8n? (Automate ANYTHING in 60 Secs!)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand what n8n is at a high level.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> n8n as a workflow automation tool, low-code.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Quickly show a visually appealing, simple 2-3 node workflow in action (e.g., a webhook receiving data and sending a Discord message).</li>
+                                    <li>Flash text overlay: "This is n8n!" "Automate repetitive tasks!"</li>
+                                    <li>Briefly state: "n8n connects your apps and services to automate tasks, no complex coding needed!"</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> n8n can automate cool stuff and save you time.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 2: Why n8n? Top 3 Benefits for YOU!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand key advantages of using n8n.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Visual building, flexibility, self-hosting/control.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Show the drag-and-drop interface. Text: "Visually Build!"</li>
+                                    <li>Briefly show a node setting with an expression. Text: "Add Code if Needed!".</li>
+                                    <li>Mention self-hosting. Text: "Control Your Data!" or "Free to Start (Self-Host)!".</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> n8n is easy to use, powerful, and gives you control.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 3: n8n UI Tour: Your First Look (Canvas & Nodes!)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Identify the main areas of the n8n interface.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> n8n User Interface (Canvas, Nodes Panel).</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Open n8n. Point to the main workflow canvas. Text: "Your Playground: The Canvas."</li>
+                                    <li>Point to the nodes panel on the right. Text: "Your Tools: The Nodes Panel."</li>
+                                    <li>Briefly drag a node onto the canvas.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You know where to build and where to find your tools.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 4: Workflows, Nodes, Triggers, Actions: The Building Blocks!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand the basic definitions of workflow, node, trigger, and action.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Workflows, Nodes (Triggers & Actions).</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Show an empty canvas. Text: "This is a WORKFLOW."</li>
+                                    <li>Drag a node onto it. Text: "This is a NODE."</li>
+                                    <li>Point to a trigger node (e.g., Schedule). Text: "TRIGGERS start workflows." (Bolt icon visible).</li>
+                                    <li>Point to an action node (e.g., Send Email). Text: "ACTIONS do things."</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You understand the basic language of n8n.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 5: Cloud vs. Self-Hosted n8n: Which is for YOU?</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Know the basic difference and when to choose which.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> n8n Cloud, Self-hosting.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Show n8n Cloud login page. Text: "n8n Cloud: Easy Setup, Managed."</li>
+                                    <li>Show a terminal with Docker command for n8n: <pre><code>docker run -it --rm --name n8n -p 5678:5678 -v n8n_data:/home/node/.n8n n8nio/n8n</code></pre> Text: "Self-Hosted: Free, Full Control."</li>
+                                    <li>Quick pro/con text overlay for each.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Choose the right n8n setup for your learning journey.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 6: Your First Node: The Manual Trigger (Start ANY Workflow!)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn how to use the Manual Trigger node to start a workflow.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Manual Trigger node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Create a new workflow.</li>
+                                    <li>Click "Add first step" or "+". Search "Manual Trigger".</li>
+                                    <li>Add the Manual Trigger node.</li>
+                                    <li>Click "Test step" or "Execute Node" on the Manual Trigger. Show it runs successfully.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can now manually start and test any workflow idea.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 7: Testing Your Node: See Instant Results! (The Output Panel)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand how to test a node and view its output.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Node execution, Output panel, JSON (basic view).</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Use the Manual Trigger from Day 6.</li>
+                                    <li>Execute the node.</li>
+                                    <li>Point clearly to the "Output" panel on the right.</li>
+                                    <li>Highlight the data shown (likely simple JSON). Text: "See what your node did!"</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can immediately see if your node is working and what data it produces.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="week-section week-2 bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="week-header">
+                    <h2 class="text-2xl font-bold">Week 2: Your First Simple Automations (Days 8-14)</h2>
+                    <span class="arrow-icon text-2xl font-bold transform transition-transform duration-300">➡️</span>
+                </div>
+                <div class="day-cards-container p-4 pt-0">
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 8: The Schedule Trigger: Automate on a Timer!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to configure the Schedule Trigger to run a workflow at specific times.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Schedule Trigger node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Add a Schedule Trigger node.</li>
+                                    <li>Show options: "Every Minute/Hour/Day/Week/Month", "Custom (Cron)".</li>
+                                    <li>Configure it to run "Every Minute" for a quick demo.</li>
+                                    <li>Show how to set a specific time (e.g., 9 AM daily, Trigger on Weekdays: Monday, Trigger at Hour: 9, Trigger at Minute: 0).</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can make your automations run automatically.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 9: Send Your First Automated Discord Message!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to use the Discord node to send a message.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Discord node, Action node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Start with a Manual Trigger.</li>
+                                    <li>Add a Discord node.</li>
+                                    <li>Select "Send a message" operation.</li>
+                                    <li>Briefly show "Connection Type: Webhook" and paste a Discord webhook URL (explain credentials are next, webhook is simpler for first demo).</li>
+                                    <li>Enter a static message in the "Message" field.</li>
+                                    <li>Execute and show the message in Discord.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can send messages to Discord automatically.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 10: Connecting Trigger to Action: Schedule -> Discord!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand how to connect two nodes to create a simple workflow.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Workflow logic (Trigger -> Action), Connections.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Have the Schedule Trigger (from Day 8, set to run in 1 min).</li>
+                                    <li>Have the Discord node (from Day 9, with message configured).</li>
+                                    <li>Clearly show dragging the connection from the output of Schedule Trigger to the input of Discord node.</li>
+                                    <li>Activate the workflow. Wait for it to run and show the Discord message appearing.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You've built your first automated multi-step workflow!</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 11: Understanding Credentials: Securely Connect Your Apps!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand what credentials are and why they are needed.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Credentials, API Keys, Authentication.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Open a node that requires credentials (e.g., Discord node, select "Bot Token" or Google Sheets node).</li>
+                                    <li>Point to the "Credential to connect with" dropdown.</li>
+                                    <li>Click "Create new credential."</li>
+                                    <li>Briefly show placeholder fields for an API key or OAuth. Explain: "This is how n8n securely talks to your apps.".</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You know how to securely let n8n access your other apps.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 12: Simple Workflow: Daily Joke to Discord (HTTP Request Intro!)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Use the HTTP Request node to get data from a simple public API.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> HTTP Request node (GET), Public API.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Schedule Trigger (e.g., daily).</li>
+                                    <li>Add HTTP Request node.</li>
+                                    <li>Method: GET. URL: A public joke API (e.g., <code>https://official-joke-api.appspot.com/random_joke</code>).</li>
+                                    <li>Execute HTTP Request node. Show the JSON output containing a joke.</li>
+                                    <li>(Next step for Day 14: Send this joke to Discord).</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can pull data from almost any service on the internet into n8n.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 13: Reading API Data: What's JSON? (Super Basic Intro)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Recognize JSON as a common data format from APIs.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> JSON (basic structure: keys, values, objects, arrays).</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Show the JSON output from the Joke API (Day 12). <pre><code>{ "type": "general", "setup": "What did the shy pebble wish for?", "punchline": "That she was a little boulder.", "id": 123 }</code></pre></li>
+                                    <li>Point to a "key" (e.g., "setup"). Text: "This is a KEY."</li>
+                                    <li>Point to its "value" (e.g., the joke setup). Text: "This is a VALUE."</li>
+                                    <li>Briefly show an array <code>[]</code> if present, or an object <code>{}</code>. Text: "Data comes in these structures.".</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can start to understand the data n8n works with.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 14: Using Data from Previous Node: Drag & Drop Magic!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn how to use data from a previous node in a subsequent node.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Data mapping, Expressions (simple).</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Continue from Day 12 (Joke API). Add a Discord node.</li>
+                                    <li>In the Discord node's "Message" field, type some static text.</li>
+                                    <li>Open the expression editor for the message.</li>
+                                    <li>Show the "INPUT" panel on the left with data from the HTTP Request node.</li>
+                                    <li>Drag the joke's "setup" field into the message. Drag the "punchline" field. (e.g., <code>{{ $('HTTP Request').item.json.setup }} - {{ $('HTTP Request').item.json.punchline }}</code> or using node input <code>{{$json.setup}} - {{$json.punchline}}</code> if directly connected).</li>
+                                    <li>Execute and show the joke appearing in Discord.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Your automations can now use dynamic data!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="week-section week-3 bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="week-header">
+                    <h2 class="text-2xl font-bold">Week 3: Essential Nodes & Data Basics (Days 15-21)</h2>
+                    <span class="arrow-icon text-2xl font-bold transform transition-transform duration-300">➡️</span>
+                </div>
+                <div class="day-cards-container p-4 pt-0">
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 15: Google Sheets: Append a New Row AUTOMATICALLY!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to use the Google Sheets node to append data.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Google Sheets node (Append Row/Append or Update Row).</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Manual Trigger.</li>
+                                    <li>Add Google Sheets node. Authenticate.</li>
+                                    <li>Operation: "Append Row". Select Spreadsheet and Sheet.</li>
+                                    <li>Mode: "Map Each Column Manually". Add a column (e.g., "Timestamp").</li>
+                                    <li>For its value, use an expression like <code>{{new Date().toISOString()}}</code>.</li>
+                                    <li>Execute. Show the new row in Google Sheets.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can automatically log data to a spreadsheet.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 16: Gmail Trigger: Act on New Emails!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to use the Gmail Trigger node.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Gmail Trigger node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Add Gmail Trigger node. Authenticate.</li>
+                                    <li>Operation: "On message received".</li>
+                                    <li>Briefly show filter options (e.g., specific sender or label) but keep it simple.</li>
+                                    <li>Fetch test event. Show the email data in the output.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Your workflows can react to incoming emails.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 17: Workflow: New Email Subject to Google Sheets!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Combine Gmail Trigger and Google Sheets node.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Data flow, practical use case.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Gmail Trigger (from Day 16).</li>
+                                    <li>Google Sheets node (Append Row, from Day 15).</li>
+                                    <li>In Google Sheets node, map a column (e.g., "EmailSubject") to <code>{{$json.subject}}</code> (assuming Gmail trigger output).</li>
+                                    <li>Send a test email that matches the trigger.</li>
+                                    <li>Show the workflow running and the subject appearing in Google Sheets.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can extract information from emails and save it.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 18: The "Edit Fields" (Set) Node: Modify Your Data!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to use the Edit Fields node to add or change data.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Edit Fields (Set) node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Manual Trigger. Add an Edit Fields node.</li>
+                                    <li>Mode: Manual Mapping.</li>
+                                    <li>Add a field. Name: "MyStatus". Value (Fixed): "Active".</li>
+                                    <li>Add another field. Name: "InputData". Value (Expression): <code>{{$json.somePreviousData}}</code> (simulate by adding a field in Manual Trigger's JSON output).</li>
+                                    <li>Execute. Show output.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You can clean, transform, and prepare data for other nodes.</p>
+                        </div>
+                    </div>
+                     <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 19: Basic Expressions: Combine Text Dynamically!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to write a simple expression to combine static text and data.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Expressions, String concatenation.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Manual Trigger (configure to output <code>{"name": "User"}</code>).</li>
+                                    <li>Add a Discord node.</li>
+                                    <li>In the Message field, use an expression: <code>Hello, {{$json.name}}! Welcome to n8n.</code></li>
+                                    <li>Execute and show the personalized message in Discord.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Make your automated messages more personal and dynamic.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 20: The "If" Node: Simple Decisions in Your Workflow!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to use the If node for basic conditional logic.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> If node, Conditional logic.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Manual Trigger (output <code>{"value": 15}</code>).</li>
+                                    <li>Add an If node.</li>
+                                    <li>Condition: <code>{{$json.value}}</code> Number > <code>10</code>.</li>
+                                    <li>Add a Discord node to the "true" output: "Value is greater than 10."</li>
+                                    <li>Add another Discord node to the "false" output: "Value is 10 or less."</li>
+                                    <li>Execute. Show correct Discord message. Change input to 5, re-execute.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Your workflows can now make simple decisions.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 21: Pinning Data: Test Like a Pro!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn how to use the data pinning feature for easier testing.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Data pinning, Efficient testing.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Use a node that fetches external data (e.g., HTTP Request from Day 12).</li>
+                                    <li>Execute the node.</li>
+                                    <li>In the OUTPUT view, click the "Pin data" icon. Show "This data is pinned" banner.</li>
+                                    <li>Explain: "Now, this node will always output this saved data when testing, saving API calls!"</li>
+                                    <li>Show how to "Unpin."</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Test workflows faster and avoid hitting API limits.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="week-section week-4 bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="week-header">
+                    <h2 class="text-2xl font-bold">Week 4: Practical Mini-Projects & Troubleshooting (Days 22-28)</h2>
+                    <span class="arrow-icon text-2xl font-bold transform transition-transform duration-300">➡️</span>
+                </div>
+                <div class="day-cards-container p-4 pt-0">
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 22: Project: Daily Weather Update to Discord!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Build a multi-node workflow to fetch and send weather information.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Schedule Trigger, HTTP Request, Discord/Email node, Expressions.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Schedule Trigger (Daily).</li>
+                                    <li>HTTP Request node: GET weather from a public API (e.g., OpenWeatherMap - requires API key but free tier exists, or <code>https://wttr.in/{city}?format=j1</code> for a simpler JSON option).</li>
+                                    <li>Discord node: Use expressions to format a message like "Weather in [City]: [Condition]." (e.g., <code>{{ $('HTTP Request').item.json.current_condition[0].FeelsLikeC }}°C</code>).</li>
+                                    <li>Activate and show the daily weather update.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Create a useful, personalized information bot.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 23: Webhook Basics: What is it & How to Trigger a Workflow!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand what a webhook is and how to use the Webhook trigger.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Webhook Trigger node, Test URL.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Add a Webhook Trigger node.</li>
+                                    <li>Explain: "This node gives you a unique URL. When that URL gets data, your workflow starts!"</li>
+                                    <li>Show the "Test URL". Copy it.</li>
+                                    <li>Open a browser tab, paste the Test URL, add <code>?message=hello</code>.</li>
+                                    <li>Switch back to n8n, show the Webhook node received <code>{"message":"hello"}</code> in the <code>query</code> part of the <code>json</code> object.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Your workflows can now be triggered by other apps and services in real-time.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 24: Common Error: "Node Not Executing" - Quick Fixes!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn basic checks if a node isn't running.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Troubleshooting, Node connections, Activation.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Show a workflow where a node isn't connected properly (the line is missing or not connected to an input). Point out the missing link.</li>
+                                    <li>Show a workflow that isn't "Active". Point to the toggle switch at the top right.</li>
+                                    <li>Briefly mention checking credentials for the problematic node if it interacts with an external service.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Quickly solve one of the most common beginner issues.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 25: Reading Node Output: Debugging Your Flow!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn to inspect a node's output to understand what's happening.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Debugging, Output panel, JSON view, Table view, Schema view.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Execute a node (e.g., HTTP Request).</li>
+                                    <li>In the Output panel, switch between JSON view and Table view.</li>
+                                    <li>Point to the "Schema" view. Explain it shows the data structure.</li>
+                                    <li>Show how to expand nested JSON objects to find specific data by clicking the small arrows.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Understand your data flow and find issues faster.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 26: Project: Simple Form to Google Sheets (Webhook/n8n Form)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Create a workflow to capture data from a simple web form.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Webhook Trigger (POST) or n8n Form Trigger, Google Sheets node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show (Webhook Example):</strong>
+                                <ol>
+                                    <li>Webhook node (set to HTTP Method: POST, show Test URL).</li>
+                                    <li>Show a simple HTML form (e.g., using JSFiddle/Codepen, provide link) that POSTs to the webhook URL with fields like <code>name</code> and <code>email</code>.</li>
+                                    <li>Google Sheets node: Append <code>name</code> and <code>email</code> from webhook body (e.g., <code>{{$json.body.name}}</code> and <code>{{$json.body.email}}</code>).</li>
+                                    <li>Submit the form, show data appearing in n8n and then in Google Sheets.</li>
+                                    <li><em>Alternative: Briefly show n8n Form Trigger if simpler for TikTok.</em></li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Capture leads or feedback directly into your spreadsheet.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 27: Using n8n Templates: Jumpstart Your Automations!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Learn how to find and use pre-built n8n workflow templates.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Workflow templates, n8n.io/workflows.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Go to n8n.io/workflows.</li>
+                                    <li>Show searching for a simple template (e.g., "Discord notification" or "Google Sheets").</li>
+                                    <li>Show copying the template JSON from the template page.</li>
+                                    <li>In n8n, create a new workflow, click the three dots menu > Import from File/Clipboard > Paste JSON.</li>
+                                    <li>Briefly show the imported workflow.</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Save time and learn by example with ready-made workflows.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 28: Quick Tip: The "NoOp" (No Operation) Node!</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Understand the purpose of the NoOp node.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> NoOp node.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Show an If node with two branches (true/false).</li>
+                                    <li>On the "true" branch, add a Discord node.</li>
+                                    <li>On the "false" branch, add a NoOp node. Explain: "Sometimes, you want one path to do nothing. That's NoOp!"</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> A useful utility node for cleaner workflow logic.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="week-section week-5 bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="week-header">
+                    <h2 class="text-2xl font-bold">Week 5: Advanced Beginner & Next Steps (Days 29-30)</h2>
+                    <span class="arrow-icon text-2xl font-bold transform transition-transform duration-300">➡️</span>
+                </div>
+                <div class="day-cards-container p-4 pt-0">
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 29: Automate a Repetitive Social Task (e.g., Idea to Draft)</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> See how multiple n8n skills can combine for a useful automation.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Workflow design thinking, combining multiple nodes.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show (Conceptual for TikTok):</strong>
+                                <ol>
+                                    <li>Idea: "Get new blog posts from an RSS feed, create a draft tweet, and send for approval."</li>
+                                    <li>Quickly show the nodes involved: RSS Read Trigger -> Edit Fields (to format tweet text, perhaps add hashtags) -> Google Sheets (to log for approval) OR Email node (to send the draft for approval).</li>
+                                    <li>Focus on the <em>concept</em> of breaking down a bigger task into smaller, manageable automated steps.</li>
+                                    <li><em>This is more of an "idea" video than a full build, given TikTok constraints.</em></li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> Start thinking about how to automate your own unique, multi-step tasks.</p>
+                        </div>
+                    </div>
+                    <div class="day-card p-5 shadow-md">
+                        <h3 class="text-xl font-bold mb-2">Day 30: You're an n8n Beginner No More! What's Next?</h3>
+                        <div class="day-card-content text-sm space-y-3">
+                            <p><strong>💡 Learning Objective:</strong> Know where to go to continue learning n8n.</p>
+                            <p><strong>🔑 Key n8n Concept(s)/Node(s):</strong> Continuous learning, n8n community, n8n documentation.</p>
+                            <div><strong>🛠️ Step-by-Step Actions to Show:</strong>
+                                <ol>
+                                    <li>Recap the 30-day journey briefly, highlighting key skills learned.</li>
+                                    <li>Show the n8n community forum website (community.n8n.io). Text: "Join the Community!"</li>
+                                    <li>Show the n8n documentation website (docs.n8n.io). Text: "Explore the Docs!"</li>
+                                    <li>Show n8n.io/workflows again. Text: "Discover More Templates!"</li>
+                                    <li>Encouraging final message: "Keep automating!"</li>
+                                </ol>
+                            </div>
+                            <p><strong>💥 Value/Impact:</strong> You have the resources and confidence to keep automating with n8n.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-8 bg-gray-800 text-center text-gray-300 mt-12">
+        <p>&copy; 2024 Interactive n8n Curriculum. Happy Automating!</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const weekHeaders = document.querySelectorAll('.week-header');
+
+            weekHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const dayCardsContainer = header.nextElementSibling;
+                    const isActive = header.classList.toggle('active');
+
+                    if (isActive) {
+                        dayCardsContainer.style.maxHeight = dayCardsContainer.scrollHeight + "px";
+                        // Animate day cards
+                        const dayCards = dayCardsContainer.querySelectorAll('.day-card');
+                        dayCards.forEach((card, index) => {
+                            setTimeout(() => {
+                                card.classList.add('visible');
+                            }, index * 100); // Stagger animation
+                        });
+                    } else {
+                        dayCardsContainer.style.maxHeight = "0px";
+                        const dayCards = dayCardsContainer.querySelectorAll('.day-card');
+                        dayCards.forEach(card => {
+                            card.classList.remove('visible'); // Reset for next open
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
